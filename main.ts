@@ -1,10 +1,9 @@
 import {
   App,
   MarkdownPostProcessorContext,
-  Notice,
   Plugin,
   PluginSettingTab,
-  Setting
+  SettingDefinitionItem
 } from "obsidian";
 import { Extension, RangeSetBuilder } from "@codemirror/state";
 import {
@@ -26,7 +25,7 @@ const DEFAULT_SETTINGS: TimeStampHiderSettings = {
   pattern: "^\\d{10}\\s+"
 };
 
-const WIKI_LINK_PATTERN = /\[\[([^\]\|\#]+)(?:#[^\]\|]*)?(?:\|([^\]]+))?\]\]/g;
+const WIKI_LINK_PATTERN = /\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g;
 
 export default class TimeStampHiderPlugin extends Plugin {
   settingsData: TimeStampHiderSettings;
@@ -49,7 +48,8 @@ export default class TimeStampHiderPlugin extends Plugin {
   }
 
   async loadSettings() {
-    this.settingsData = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const loaded = (await this.loadData()) as Partial<TimeStampHiderSettings> | null;
+    this.settingsData = Object.assign({}, DEFAULT_SETTINGS, loaded ?? {});
   }
 
   async saveSettings() {
@@ -106,7 +106,10 @@ export default class TimeStampHiderPlugin extends Plugin {
   }
 
   private createLivePreviewExtension(): Extension {
-    const plugin = this;
+    const app = this.app;
+    const getRegex = () => this.getRegex();
+    const hideTimeStamp = (text: string) => this.hideTimeStamp(text);
+    const isEnabled = () => this.settingsData.enabled;
     let pointerIsDown = false;
 
     class HiddenTimeStampWidget extends WidgetType {
@@ -124,7 +127,7 @@ export default class TimeStampHiderPlugin extends Plugin {
       }
 
       toDOM(view: EditorView) {
-        const span = document.createElement("span");
+        const span = view.contentDOM.ownerDocument.createElement("span");
         span.addClass("cm-hmd-internal-link", "cm-link", "cm-underline");
         span.setAttr("role", "link");
         span.setAttr("tabindex", "0");
@@ -145,20 +148,20 @@ export default class TimeStampHiderPlugin extends Plugin {
           event.preventDefault();
           event.stopPropagation();
 
-          const sourcePath = plugin.app.workspace.getActiveFile()?.path ?? "";
+          const sourcePath = app.workspace.getActiveFile()?.path ?? "";
           const newLeaf =
             event instanceof MouseEvent && (event.ctrlKey || event.metaKey);
 
-          plugin.app.workspace.openLinkText(this.target, sourcePath, newLeaf);
+          void app.workspace.openLinkText(this.target, sourcePath, newLeaf);
         };
 
         // Keep Live Preview stable while the mouse is held down. On click,
         // Obsidian/CodeMirror gets the cursor back and reveals the source link.
-        span.addEventListener("mousedown", (event) => {
+        span.addEventListener("mousedown", (event: MouseEvent) => {
           event.preventDefault();
           event.stopPropagation();
         });
-        span.addEventListener("click", (event) => {
+        span.addEventListener("click", (event: MouseEvent) => {
           if (event.ctrlKey || event.metaKey) {
             openTarget(event);
             return;
@@ -166,7 +169,7 @@ export default class TimeStampHiderPlugin extends Plugin {
 
           editLink(event);
         });
-        span.addEventListener("keydown", (event) => {
+        span.addEventListener("keydown", (event: KeyboardEvent) => {
           if (event.key === "Enter" || event.key === " ") {
             editLink(event);
           }
@@ -183,7 +186,7 @@ export default class TimeStampHiderPlugin extends Plugin {
     const buildDecorations = (view: EditorView): DecorationSet => {
       const builder = new RangeSetBuilder<Decoration>();
 
-      if (!plugin.settingsData.enabled || !plugin.getRegex()) {
+      if (!isEnabled() || !getRegex()) {
         return builder.finish();
       }
 
@@ -200,7 +203,7 @@ export default class TimeStampHiderPlugin extends Plugin {
 
           const target = match[1];
           const fileName = target.split("/").pop() ?? target;
-          const display = plugin.hideTimeStamp(fileName);
+          const display = hideTimeStamp(fileName);
 
           if (!display || display === fileName) {
             continue;
@@ -283,46 +286,73 @@ class TimeStampHiderSettingTab extends PluginSettingTab {
     super(app, plugin);
   }
 
-  display() {
-    const { containerEl } = this;
-    containerEl.empty();
+  getSettingDefinitions(): SettingDefinitionItem[] {
+    return [
+      {
+        type: "group",
+        heading: "Time stamp hider",
+        items: [
+          {
+            name: "Hide timestamp",
+            desc: "Hide matching timestamp prefixes in rendered internal link text.",
+            control: {
+              type: "toggle",
+              key: "enabled",
+              defaultValue: DEFAULT_SETTINGS.enabled
+            }
+          },
+          {
+            name: "Timestamp regular expression",
+            desc: "Default: ^\\d{10}\\s+",
+            control: {
+              type: "text",
+              key: "pattern",
+              defaultValue: DEFAULT_SETTINGS.pattern,
+              placeholder: DEFAULT_SETTINGS.pattern,
+              validate: (value) => validatePattern(value)
+            }
+          }
+        ]
+      }
+    ];
+  }
 
-    containerEl.createEl("h2", { text: "Time Stamp Hider" });
-
-    new Setting(containerEl)
-      .setName("Hide timestamp")
-      .setDesc("Hide matching timestamp prefixes in rendered internal link text.")
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settingsData.enabled)
-          .onChange(async (value) => {
-            this.plugin.settingsData.enabled = value;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    const patternError = this.plugin.getPatternError();
-    const regexSetting = new Setting(containerEl)
-      .setName("Timestamp regular expression")
-      .setDesc(
-        patternError
-          ? `Invalid regular expression: ${patternError}`
-          : "Default: ^\\d{10}\\s+"
-      )
-      .addText((text) =>
-        text
-          .setPlaceholder(DEFAULT_SETTINGS.pattern)
-          .setValue(this.plugin.settingsData.pattern)
-          .onChange(async (value) => {
-            this.plugin.settingsData.pattern = value.trim() || DEFAULT_SETTINGS.pattern;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-      );
-
-    if (patternError) {
-      regexSetting.settingEl.addClass("time-stamp-hider-invalid-setting");
-      new Notice("Time Stamp Hider: invalid regular expression");
+  getControlValue(key: string): unknown {
+    switch (key) {
+      case "enabled":
+        return this.plugin.settingsData.enabled;
+      case "pattern":
+        return this.plugin.settingsData.pattern;
+      default:
+        return undefined;
     }
+  }
+
+  async setControlValue(key: string, value: unknown) {
+    switch (key) {
+      case "enabled":
+        this.plugin.settingsData.enabled =
+          typeof value === "boolean" ? value : DEFAULT_SETTINGS.enabled;
+        break;
+      case "pattern":
+        this.plugin.settingsData.pattern =
+          typeof value === "string" && value.trim()
+            ? value.trim()
+            : DEFAULT_SETTINGS.pattern;
+        break;
+      default:
+        return;
+    }
+
+    await this.plugin.saveSettings();
+  }
+}
+
+function validatePattern(value: string) {
+  try {
+    new RegExp(value.trim() || DEFAULT_SETTINGS.pattern);
+    return undefined;
+  } catch (error) {
+    return error instanceof Error ? error.message : "Invalid regular expression";
   }
 }
