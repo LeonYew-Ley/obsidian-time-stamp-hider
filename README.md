@@ -1,6 +1,10 @@
 # Time Stamp Hider
 
+[中文说明](https://github.com/LeonYew-Ley/obsidian-time-stamp-hider/blob/main/README.zh-CN.md)
+
 Time Stamp Hider is an Obsidian plugin that hides timestamp prefixes in Zettelkasten-style internal link display text.
+
+![Time Stamp Hider demo](https://raw.githubusercontent.com/LeonYew-Ley/obsidian-time-stamp-hider/main/assets/demo.gif)
 
 It is designed for notes named like this:
 
