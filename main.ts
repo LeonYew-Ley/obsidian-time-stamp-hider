@@ -5,7 +5,7 @@ import {
   PluginSettingTab,
   SettingDefinitionItem
 } from "obsidian";
-import { Extension, RangeSetBuilder } from "@codemirror/state";
+import { EditorSelection, Extension, RangeSetBuilder } from "@codemirror/state";
 import {
   Decoration,
   DecorationSet,
@@ -111,6 +111,7 @@ export default class TimeStampHiderPlugin extends Plugin {
     const hideTimeStamp = (text: string) => this.hideTimeStamp(text);
     const isEnabled = () => this.settingsData.enabled;
     let pointerIsDown = false;
+    let pointerDownSelection: EditorSelection | null = null;
 
     class HiddenTimeStampWidget extends WidgetType {
       constructor(
@@ -212,7 +213,11 @@ export default class TimeStampHiderPlugin extends Plugin {
           const linkStart = from + match.index;
           const linkEnd = linkStart + match[0].length;
 
-          if (!pointerIsDown && selectionTouchesRange(view, linkStart, linkEnd)) {
+          const selection = pointerIsDown && pointerDownSelection
+            ? pointerDownSelection
+            : view.state.selection;
+
+          if (selectionTouchesRange(selection, linkStart, linkEnd)) {
             continue;
           }
 
@@ -256,15 +261,18 @@ export default class TimeStampHiderPlugin extends Plugin {
       {
         decorations: (value) => value.decorations,
         eventHandlers: {
-          pointerdown: () => {
+          pointerdown: (_event, view) => {
+            pointerDownSelection = view.state.selection;
             pointerIsDown = true;
           },
           pointerup: (_event, view) => {
             pointerIsDown = false;
+            pointerDownSelection = null;
             view.plugin(livePreviewPlugin)?.rebuild(view);
           },
           pointercancel: (_event, view) => {
             pointerIsDown = false;
+            pointerDownSelection = null;
             view.plugin(livePreviewPlugin)?.rebuild(view);
           }
         }
@@ -275,8 +283,8 @@ export default class TimeStampHiderPlugin extends Plugin {
   }
 }
 
-function selectionTouchesRange(view: EditorView, from: number, to: number) {
-  return view.state.selection.ranges.some((range) => {
+function selectionTouchesRange(selection: EditorSelection, from: number, to: number) {
+  return selection.ranges.some((range) => {
     return range.from <= to && range.to >= from;
   });
 }
