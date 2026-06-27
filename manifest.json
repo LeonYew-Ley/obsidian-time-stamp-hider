@@ -1,7 +1,7 @@
 {
   "id": "time-stamp-hider",
   "name": "Time Stamp Hider",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "minAppVersion": "1.5.0",
   "description": "Hide timestamp prefixes in Zettelkasten-style internal link display text without changing notes or filenames.",
   "author": "LeonYew-Ley",

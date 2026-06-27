@@ -3,7 +3,7 @@ import {
   MarkdownPostProcessorContext,
   Plugin,
   PluginSettingTab,
-  SettingDefinitionItem
+  Setting
 } from "obsidian";
 import { EditorSelection, Extension, RangeSetBuilder } from "@codemirror/state";
 import {
@@ -294,65 +294,46 @@ class TimeStampHiderSettingTab extends PluginSettingTab {
     super(app, plugin);
   }
 
-  getSettingDefinitions(): SettingDefinitionItem[] {
-    return [
-      {
-        type: "group",
-        heading: "Time stamp hider",
-        items: [
-          {
-            name: "Hide timestamp",
-            desc: "Hide matching timestamp prefixes in rendered internal link text.",
-            control: {
-              type: "toggle",
-              key: "enabled",
-              defaultValue: DEFAULT_SETTINGS.enabled
+  display() {
+    const { containerEl } = this;
+
+    containerEl.empty();
+
+    new Setting(containerEl).setName("Display").setHeading();
+
+    new Setting(containerEl)
+      .setName("Hide timestamp")
+      .setDesc("Hide matching timestamp prefixes in rendered internal link text.")
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settingsData.enabled)
+          .onChange(async (value) => {
+            this.plugin.settingsData.enabled = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    const patternSetting = new Setting(containerEl)
+      .setName("Timestamp regular expression")
+      .setDesc("Default: ^\\d{10}\\s+")
+      .addText((text) => {
+        text
+          .setPlaceholder(DEFAULT_SETTINGS.pattern)
+          .setValue(this.plugin.settingsData.pattern)
+          .onChange(async (value) => {
+            const nextPattern = value.trim() || DEFAULT_SETTINGS.pattern;
+            const error = validatePattern(nextPattern);
+
+            if (error) {
+              patternSetting.setDesc(`Invalid regular expression: ${error}`);
+              return;
             }
-          },
-          {
-            name: "Timestamp regular expression",
-            desc: "Default: ^\\d{10}\\s+",
-            control: {
-              type: "text",
-              key: "pattern",
-              defaultValue: DEFAULT_SETTINGS.pattern,
-              placeholder: DEFAULT_SETTINGS.pattern,
-              validate: (value) => validatePattern(value)
-            }
-          }
-        ]
-      }
-    ];
-  }
 
-  getControlValue(key: string): unknown {
-    switch (key) {
-      case "enabled":
-        return this.plugin.settingsData.enabled;
-      case "pattern":
-        return this.plugin.settingsData.pattern;
-      default:
-        return undefined;
-    }
-  }
-
-  async setControlValue(key: string, value: unknown) {
-    switch (key) {
-      case "enabled":
-        this.plugin.settingsData.enabled =
-          typeof value === "boolean" ? value : DEFAULT_SETTINGS.enabled;
-        break;
-      case "pattern":
-        this.plugin.settingsData.pattern =
-          typeof value === "string" && value.trim()
-            ? value.trim()
-            : DEFAULT_SETTINGS.pattern;
-        break;
-      default:
-        return;
-    }
-
-    await this.plugin.saveSettings();
+            patternSetting.setDesc("Default: ^\\d{10}\\s+");
+            this.plugin.settingsData.pattern = nextPattern;
+            await this.plugin.saveSettings();
+          });
+      });
   }
 }
 
