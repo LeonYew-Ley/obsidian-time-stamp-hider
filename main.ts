@@ -3,6 +3,7 @@ import {
   MarkdownPostProcessorContext,
   Plugin,
   PluginSettingTab,
+  Platform,
   Setting
 } from "obsidian";
 import { EditorSelection, Extension, RangeSetBuilder } from "@codemirror/state";
@@ -107,6 +108,9 @@ export default class TimeStampHiderPlugin extends Plugin {
 
   private createLivePreviewExtension(): Extension {
     const app = this.app;
+    const isMobileApp =
+      Platform.isMobileApp ||
+      (app as App & { isMobile?: boolean }).isMobile === true;
     const getRegex = () => this.getRegex();
     const hideTimeStamp = (text: string) => this.hideTimeStamp(text);
     const isEnabled = () => this.settingsData.enabled;
@@ -155,6 +159,13 @@ export default class TimeStampHiderPlugin extends Plugin {
 
           void app.workspace.openLinkText(this.target, sourcePath, newLeaf);
         };
+
+        if (isMobileApp) {
+          span.addEventListener("click", (event: MouseEvent) => {
+            openTarget(event);
+          });
+          return span;
+        }
 
         // Keep Live Preview stable while the mouse is held down. On click,
         // Obsidian/CodeMirror gets the cursor back and reveals the source link.
