@@ -2,6 +2,8 @@
 
 [中文说明](https://github.com/LeonYew-Ley/obsidian-time-stamp-hider/blob/main/README.zh-CN.md)
 
+[Install from Obsidian Community Plugins](https://community.obsidian.md/plugins/time-stamp-hider)
+
 Time Stamp Hider is an Obsidian plugin that hides timestamp prefixes in Zettelkasten-style internal links and note titles.
 
 ## Demo
@@ -91,7 +93,7 @@ Available settings:
 
 ## Installation
 
-Once available in the Obsidian community plugin directory:
+Install Time Stamp Hider from its [Obsidian Community Plugins page](https://community.obsidian.md/plugins/time-stamp-hider), or install it from inside Obsidian:
 
 1. Open **Settings → Community plugins**.
 2. Search for **Time Stamp Hider**.

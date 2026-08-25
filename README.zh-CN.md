@@ -2,6 +2,8 @@
 
 [English README](https://github.com/LeonYew-Ley/obsidian-time-stamp-hider/blob/main/README.md)
 
+[从 Obsidian 社区插件市场安装](https://community.obsidian.md/plugins/time-stamp-hider)
+
 Time Stamp Hider 是一个 Obsidian 插件，用于在界面显示中隐藏 Zettelkasten 风格文件名开头的时间戳。
 
 ![Time Stamp Hider 演示](https://raw.githubusercontent.com/LeonYew-Ley/obsidian-time-stamp-hider/main/assets/demo.gif)
@@ -89,7 +91,7 @@ Time Stamp Hider 只改变受支持渲染区域里的显示文本。
 
 ## 安装
 
-插件进入 Obsidian 社区插件目录后：
+你可以前往 [Obsidian 社区插件市场页面](https://community.obsidian.md/plugins/time-stamp-hider) 安装 Time Stamp Hider，也可以在 Obsidian 内安装：
 
 1. 打开 **Settings → Community plugins**。
 2. 搜索 **Time Stamp Hider**。
