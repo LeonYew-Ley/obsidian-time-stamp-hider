@@ -31,7 +31,11 @@ const DEFAULT_SETTINGS: TimeStampHiderSettings = {
 };
 
 const WIKI_LINK_PATTERN = /\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g;
-const TAB_TITLE_SELECTOR = ".workspace-tab-header-inner-title";
+const NATIVE_TAB_TITLE_SELECTOR = ".workspace-tab-header-inner-title";
+const VERTICAL_TABS_TITLE_SELECTOR =
+  ".obsidian-vertical-tabs-container .tree-item.is-tab .tree-item-inner-text";
+const TAB_TITLE_SELECTOR =
+  `${NATIVE_TAB_TITLE_SELECTOR}, ${VERTICAL_TABS_TITLE_SELECTOR}`;
 const INLINE_TITLE_SELECTOR = ".inline-title";
 const TITLE_SELECTOR = `${TAB_TITLE_SELECTOR}, ${INLINE_TITLE_SELECTOR}`;
 

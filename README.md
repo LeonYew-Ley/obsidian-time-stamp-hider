@@ -28,7 +28,7 @@ The original filenames and Markdown content are not changed.
 
 - Hides timestamp prefixes in Reading View internal links.
 - Hides timestamp prefixes in Live Preview internal links where stable editor rendering allows it.
-- Optionally hides timestamp prefixes in workspace tab titles.
+- Optionally hides timestamp prefixes in native workspace tab titles and Vertical Tabs.
 - Optionally hides timestamp prefixes in titles shown inside notes.
 - Keeps Markdown source, wikilinks, aliases, frontmatter, filenames, backlinks, renaming, and Obsidian indexing untouched.
 - Supports a custom regular expression for the prefix.
@@ -85,7 +85,7 @@ Open **Settings → Community plugins → Time Stamp Hider**.
 Available settings:
 
 - **Hide timestamp**: Enable or disable hiding in rendered internal link text.
-- **Hide timestamp in tab titles**: Hide the prefix in workspace tabs. This is off by default.
+- **Hide timestamp in tab titles**: Hide the prefix in native workspace tabs and Vertical Tabs. This is off by default.
 - **Hide timestamp in inline titles**: Hide the prefix in titles shown inside notes. This is off by default.
 - **Timestamp regular expression**: Customize the prefix pattern. Invalid regular expressions are ignored and shown in the settings UI.
 
