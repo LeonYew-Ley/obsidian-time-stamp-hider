@@ -89,6 +89,8 @@ Time Stamp Hider 只改变受支持渲染区域里的显示文本。
 - **Hide timestamp in inline titles**：隐藏文件内嵌标题中的时间戳，默认关闭。
 - **Timestamp regular expression**：自定义时间戳前缀匹配规则。无效正则会在设置界面中提示，并被插件安全忽略。
 
+设置界面会跟随 Obsidian 当前使用的语言。目前支持 English 和简体中文，其他语言会回退为 English。
+
 ## 安装
 
 你可以前往 [Obsidian 社区插件市场页面](https://community.obsidian.md/plugins/time-stamp-hider) 安装 Time Stamp Hider，也可以在 Obsidian 内安装：

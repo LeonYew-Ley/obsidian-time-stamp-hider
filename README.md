@@ -91,6 +91,8 @@ Available settings:
 - **Hide timestamp in inline titles**: Hide the prefix in titles shown inside notes. This is off by default.
 - **Timestamp regular expression**: Customize the prefix pattern. Invalid regular expressions are ignored and shown in the settings UI.
 
+The settings interface follows Obsidian's current language. English and Simplified Chinese are currently supported; all other languages fall back to English.
+
 ## Installation
 
 Install Time Stamp Hider from its [Obsidian Community Plugins page](https://community.obsidian.md/plugins/time-stamp-hider), or install it from inside Obsidian:

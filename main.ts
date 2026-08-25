@@ -15,6 +15,7 @@ import {
   ViewUpdate,
   WidgetType
 } from "@codemirror/view";
+import { getTranslator } from "./i18n";
 
 interface TimeStampHiderSettings {
   enabled: boolean;
@@ -472,14 +473,15 @@ class TimeStampHiderSettingTab extends PluginSettingTab {
 
   display() {
     const { containerEl } = this;
+    const t = getTranslator();
 
     containerEl.empty();
 
-    new Setting(containerEl).setName("Display").setHeading();
+    new Setting(containerEl).setName(t("displayHeading")).setHeading();
 
     new Setting(containerEl)
-      .setName("Hide timestamp")
-      .setDesc("Hide matching timestamp prefixes in rendered internal link text.")
+      .setName(t("hideTimestampName"))
+      .setDesc(t("hideTimestampDesc"))
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settingsData.enabled)
@@ -490,8 +492,8 @@ class TimeStampHiderSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Hide timestamp in tab titles")
-      .setDesc("Hide matching timestamp prefixes in workspace tab titles.")
+      .setName(t("hideTabTitlesName"))
+      .setDesc(t("hideTabTitlesDesc"))
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settingsData.hideTabTitles)
@@ -502,8 +504,8 @@ class TimeStampHiderSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Hide timestamp in inline titles")
-      .setDesc("Hide matching timestamp prefixes in titles shown inside notes.")
+      .setName(t("hideInlineTitlesName"))
+      .setDesc(t("hideInlineTitlesDesc"))
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settingsData.hideInlineTitles)
@@ -514,8 +516,8 @@ class TimeStampHiderSettingTab extends PluginSettingTab {
       });
 
     const patternSetting = new Setting(containerEl)
-      .setName("Timestamp regular expression")
-      .setDesc("Default: ^\\d{10}\\s+")
+      .setName(t("patternName"))
+      .setDesc(t("patternDefault", { pattern: DEFAULT_SETTINGS.pattern }))
       .addText((text) => {
         text
           .setPlaceholder(DEFAULT_SETTINGS.pattern)
@@ -525,11 +527,13 @@ class TimeStampHiderSettingTab extends PluginSettingTab {
             const error = validatePattern(nextPattern);
 
             if (error) {
-              patternSetting.setDesc(`Invalid regular expression: ${error}`);
+              patternSetting.setDesc(t("patternInvalid", { error }));
               return;
             }
 
-            patternSetting.setDesc("Default: ^\\d{10}\\s+");
+            patternSetting.setDesc(
+              t("patternDefault", { pattern: DEFAULT_SETTINGS.pattern })
+            );
             this.plugin.settingsData.pattern = nextPattern;
             await this.plugin.saveSettings();
           });
