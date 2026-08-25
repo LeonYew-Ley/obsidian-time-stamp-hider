@@ -26,6 +26,8 @@ Obsidian 说明书
 
 - 在 Reading View 中隐藏内部链接显示文本开头的时间戳。
 - 在 Live Preview 可稳定处理的范围内隐藏内部链接显示文本开头的时间戳。
+- 可选择隐藏工作区页签标题开头的时间戳。
+- 可选择隐藏文件内嵌标题开头的时间戳。
 - 不修改 Markdown 源码、双链目标、alias、frontmatter、文件名、反向链接、重命名逻辑或 Obsidian 索引。
 - 支持自定义正则表达式。
 - 可在插件设置中启用或禁用。
@@ -80,7 +82,9 @@ Time Stamp Hider 只改变受支持渲染区域里的显示文本。
 
 可用设置：
 
-- **Hide timestamp**：启用或禁用隐藏时间戳。
+- **Hide timestamp**：启用或禁用隐藏内部链接显示文本中的时间戳。
+- **Hide timestamp in tab titles**：隐藏工作区页签标题中的时间戳，默认关闭。
+- **Hide timestamp in inline titles**：隐藏文件内嵌标题中的时间戳，默认关闭。
 - **Timestamp regular expression**：自定义时间戳前缀匹配规则。无效正则会在设置界面中提示，并被插件安全忽略。
 
 ## 安装

@@ -1,7 +1,7 @@
 {
   "name": "time-stamp-hider",
-  "version": "1.0.6",
-  "description": "Obsidian plugin that hides timestamp prefixes in Zettelkasten-style internal link display text.",
+  "version": "1.1.0",
+  "description": "Obsidian plugin that hides timestamp prefixes in Zettelkasten-style links and titles.",
   "main": "main.js",
   "scripts": {
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs",

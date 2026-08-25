@@ -18,19 +18,38 @@ import {
 
 interface TimeStampHiderSettings {
   enabled: boolean;
+  hideTabTitles: boolean;
+  hideInlineTitles: boolean;
   pattern: string;
 }
 
 const DEFAULT_SETTINGS: TimeStampHiderSettings = {
   enabled: true,
+  hideTabTitles: false,
+  hideInlineTitles: false,
   pattern: "^\\d{10}\\s+"
 };
 
 const WIKI_LINK_PATTERN = /\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g;
+const TAB_TITLE_SELECTOR = ".workspace-tab-header-inner-title";
+const INLINE_TITLE_SELECTOR = ".inline-title";
+const TITLE_SELECTOR = `${TAB_TITLE_SELECTOR}, ${INLINE_TITLE_SELECTOR}`;
+
+interface TitleState {
+  sourceText: string;
+  displayText: string;
+}
+
+interface MutationObserverWindow extends Window {
+  MutationObserver: typeof MutationObserver;
+}
 
 export default class TimeStampHiderPlugin extends Plugin {
   settingsData: TimeStampHiderSettings;
   private editorExtension: Extension;
+  private readonly titleObservers = new Map<Document, MutationObserver>();
+  private titleRefreshScheduled = false;
+  private readonly titleStates = new Map<HTMLElement, TitleState>();
 
   async onload() {
     await this.loadSettings();
@@ -40,12 +59,13 @@ export default class TimeStampHiderPlugin extends Plugin {
     this.registerMarkdownPostProcessor((element, context) =>
       this.processMarkdownLinks(element, context)
     );
+    this.startTitleObserver();
 
     this.addSettingTab(new TimeStampHiderSettingTab(this.app, this));
   }
 
   onunload() {
-    // Obsidian automatically unloads registered post processors and editor extensions.
+    this.stopTitleObserver();
   }
 
   async loadSettings() {
@@ -56,6 +76,7 @@ export default class TimeStampHiderPlugin extends Plugin {
   async saveSettings() {
     await this.saveData(this.settingsData);
     this.app.workspace.updateOptions();
+    this.refreshTitleVisibility();
   }
 
   getRegex(): RegExp | null {
@@ -86,6 +107,146 @@ export default class TimeStampHiderPlugin extends Plugin {
     }
 
     return text.replace(regex, "");
+  }
+
+  private stripTimeStamp(text: string): string {
+    const regex = this.getRegex();
+    return regex ? text.replace(regex, "") : text;
+  }
+
+  private startTitleObserver() {
+    this.observeDocument(this.app.workspace.containerEl.doc);
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      this.observeDocument(leaf.getContainer().doc);
+    });
+
+    this.registerEvent(this.app.workspace.on("window-open", (_workspaceWindow, window) => {
+      this.observeDocument(window.document);
+    }));
+    this.registerEvent(this.app.workspace.on("window-close", (_workspaceWindow, window) => {
+      this.titleObservers.get(window.document)?.disconnect();
+      this.titleObservers.delete(window.document);
+    }));
+
+    this.refreshTitleVisibility();
+  }
+
+  private observeDocument(doc: Document) {
+    if (this.titleObservers.has(doc)) {
+      return;
+    }
+
+    const DocumentMutationObserver = (doc.win as MutationObserverWindow)
+      .MutationObserver;
+    const observer = new DocumentMutationObserver((mutations) => {
+      if (mutations.some((mutation) => this.mutationAffectsTitles(mutation))) {
+        this.scheduleTitleRefresh();
+      }
+    });
+
+    observer.observe(doc.body, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+    this.titleObservers.set(doc, observer);
+
+    this.registerDomEvent(doc, "focusin", () => {
+      if (doc.activeElement?.closest(INLINE_TITLE_SELECTOR)) {
+        this.refreshTitleVisibility();
+      }
+    });
+    this.registerDomEvent(doc, "focusout", () => {
+      this.scheduleTitleRefresh();
+    });
+  }
+
+  private stopTitleObserver() {
+    for (const observer of this.titleObservers.values()) {
+      observer.disconnect();
+    }
+    this.titleObservers.clear();
+    this.titleRefreshScheduled = false;
+
+    for (const [element, state] of this.titleStates) {
+      if (element.isConnected && element.textContent === state.displayText) {
+        element.textContent = state.sourceText;
+      }
+    }
+    this.titleStates.clear();
+  }
+
+  private mutationAffectsTitles(mutation: MutationRecord): boolean {
+    const targetElement = mutation.target.instanceOf(Element)
+      ? mutation.target
+      : mutation.target.parentElement;
+
+    if (targetElement?.closest(TITLE_SELECTOR)) {
+      return true;
+    }
+
+    return Array.from(mutation.addedNodes).some((node) => {
+      return node.instanceOf(Element) &&
+        (node.matches(TITLE_SELECTOR) || node.querySelector(TITLE_SELECTOR) !== null);
+    });
+  }
+
+  private scheduleTitleRefresh() {
+    if (this.titleRefreshScheduled) {
+      return;
+    }
+
+    this.titleRefreshScheduled = true;
+    queueMicrotask(() => {
+      this.titleRefreshScheduled = false;
+      this.refreshTitleVisibility();
+    });
+  }
+
+  refreshTitleVisibility() {
+    for (const doc of this.titleObservers.keys()) {
+      doc.querySelectorAll<HTMLElement>(TAB_TITLE_SELECTOR).forEach((element) => {
+        this.updateTitleElement(element, this.settingsData.hideTabTitles);
+      });
+      doc.querySelectorAll<HTMLElement>(INLINE_TITLE_SELECTOR).forEach((element) => {
+        this.updateTitleElement(element, this.settingsData.hideInlineTitles);
+      });
+    }
+
+    for (const element of this.titleStates.keys()) {
+      if (!element.isConnected) {
+        this.titleStates.delete(element);
+      }
+    }
+  }
+
+  private updateTitleElement(element: HTMLElement, shouldHide: boolean) {
+    const currentText = element.textContent ?? "";
+    const previousState = this.titleStates.get(element);
+
+    if (!shouldHide) {
+      if (previousState && currentText === previousState.displayText) {
+        element.textContent = previousState.sourceText;
+      }
+      this.titleStates.delete(element);
+      return;
+    }
+
+    const sourceText = previousState && currentText === previousState.displayText
+      ? previousState.sourceText
+      : currentText;
+    const strippedText = this.stripTimeStamp(sourceText);
+    const displayText = strippedText || sourceText;
+    const activeElement = element.doc.activeElement;
+    const isEditingInlineTitle = element.matches(INLINE_TITLE_SELECTOR) &&
+      activeElement !== null &&
+      (activeElement === element || element.contains(activeElement));
+    const desiredText = isEditingInlineTitle ? sourceText : displayText;
+
+    this.titleStates.set(element, { sourceText, displayText });
+    if (currentText !== desiredText) {
+      element.textContent = desiredText;
+    }
   }
 
   private processMarkdownLinks(
@@ -320,6 +481,30 @@ class TimeStampHiderSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settingsData.enabled)
           .onChange(async (value) => {
             this.plugin.settingsData.enabled = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName("Hide timestamp in tab titles")
+      .setDesc("Hide matching timestamp prefixes in workspace tab titles.")
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settingsData.hideTabTitles)
+          .onChange(async (value) => {
+            this.plugin.settingsData.hideTabTitles = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName("Hide timestamp in inline titles")
+      .setDesc("Hide matching timestamp prefixes in titles shown inside notes.")
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settingsData.hideInlineTitles)
+          .onChange(async (value) => {
+            this.plugin.settingsData.hideInlineTitles = value;
             await this.plugin.saveSettings();
           });
       });
