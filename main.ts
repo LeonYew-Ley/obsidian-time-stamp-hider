@@ -509,7 +509,26 @@ export default class TimeStampHiderPlugin extends Plugin {
 
       private eventBelongsToEditor(event: MouseEvent): boolean {
         const target = event.target as Node | null;
-        return target !== null && this.view.contentDOM.contains(target);
+        const element = target?.nodeType === 1
+          ? target as Element
+          : target?.parentElement;
+
+        // Table cells have their own editors. A containment check alone also
+        // locks the outer editor, whose dispatch can reset the cell selection.
+        if (
+          !element ||
+          element.closest(".cm-content") !== this.view.contentDOM ||
+          element.closest(
+            "table, .cm-table-widget, .cm-embed-block, " +
+            "[contenteditable='false'], input, textarea, select, button"
+          )
+        ) {
+          return false;
+        }
+
+        // Only native text lines participate in the delayed link reveal.
+        const line = element.closest(".cm-line");
+        return line !== null && line.parentElement === this.view.contentDOM;
       }
 
       private finishPointerSelection(commit: boolean) {

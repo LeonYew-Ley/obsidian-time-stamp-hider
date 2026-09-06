@@ -1,12 +1,13 @@
 {
   "name": "time-stamp-hider",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Obsidian plugin that hides timestamp prefixes in Zettelkasten-style links and titles.",
   "main": "main.js",
   "scripts": {
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs",
     "dev": "node esbuild.config.mjs --watch",
-    "lint": "eslint main.ts i18n.ts"
+    "lint": "eslint main.ts i18n.ts",
+    "test:pointer": "node tests/pointer-selection.mjs"
   },
   "keywords": [
     "obsidian",
@@ -23,6 +24,7 @@
     "eslint": "^9.39.4",
     "eslint-plugin-obsidianmd": "^0.3.0",
     "obsidian": "^1.8.7",
+    "playwright": "^1.62.1",
     "typescript": "^5.8.3"
   }
 }
