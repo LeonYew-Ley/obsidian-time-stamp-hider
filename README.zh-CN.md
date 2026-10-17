@@ -1,5 +1,7 @@
 # Time Stamp Hider
 
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/leonyew) [![爱发电](https://img.shields.io/badge/%E7%88%B1%E5%8F%91%E7%94%B5-%E6%94%AF%E6%8C%81-946CE6)](https://afdian.com/a/leonyew)
+
 [English README](https://github.com/LeonYew-Ley/obsidian-time-stamp-hider/blob/main/README.md)
 
 [从 Obsidian 社区插件市场安装](https://community.obsidian.md/plugins/time-stamp-hider)
